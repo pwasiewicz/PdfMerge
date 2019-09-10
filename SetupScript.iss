@@ -9,6 +9,16 @@
 
 #include "EnvironmentPath.iss"
 
+#define DotNetRuntimeExe "ndp48.exe"
+
+[CustomMessages]
+InstallingDotNetFramework=Installing .NET Framework. This might take a few minutes...
+DotNetFrameworkFailedToLaunch=Failed to launch .NET Framework Installer with error "%1". Please fix the error then run this installer again.
+DotNetFrameworkFailed1602=.NET Framework installation was cancelled. This installation can continue, but be aware that this application may not run unless the .NET Framework installation is completed successfully.
+DotNetFrameworkFailed1603=A fatal error occurred while installing the .NET Framework. Please fix the error, then run the installer again.
+DotNetFrameworkFailed5100=Your computer does not meet the requirements of the .NET Framework. Please consult the documentation.
+DotNetFrameworkFailedOther=The .NET Framework installer exited with an unexpected status code "%1". Please review any other messages shown by the installer to determine whether the installation completed successfully, and abort this installation and fix the problem if it did not.
+
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
@@ -30,7 +40,7 @@ Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 ChangesEnvironment=true
-
+LicenseFile=LICENSE
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -53,6 +63,8 @@ Source: "PdfMerge.App\bin\Release\PdfSharp.dll"; DestDir: "{app}"; Flags: ignore
 Source: "PdfMerge.App\bin\Release\PdfSharp.xml"; DestDir: "{app}"; Flags: ignoreversion
 Source: "PdfMerge.App\bin\Release\de\PdfSharp.Charting.resources.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "PdfMerge.App\bin\Release\de\PdfSharp.resources.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#DotNetRuntimeExe}"; DestDir: "{tmp}"; Flags: dontcopy nocompression noencryption
+
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -63,15 +75,91 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+var
+  requiresRestart: boolean;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
     if (CurStep = ssPostInstall) and IsTaskSelected('envPath')
-    then EnvAddPath(ExpandConstant('{app}') +'\bin');
+    then EnvAddPath(ExpandConstant('{app}'));
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
     if CurUninstallStep = usPostUninstall
-    then EnvRemovePath(ExpandConstant('{app}') +'\bin');
+    then EnvRemovePath(ExpandConstant('{app}'));
 end;
 
+function DotNetIsMissing(): Boolean;
+var
+  readVal: cardinal;
+  success: Boolean;
+begin               
+  success := RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full', 'Release', readVal);
+  success := success and ((readVal = 394254) or (readVal < 528040));
+  Result := not success;
+end;
+
+// Adapted from https://blogs.msdn.microsoft.com/davidrickard/2015/07/17/installing-net-framework-4-5-automatically-with-inno-setup/
+function InstallDotNet(): String;
+var
+  statusText: string;
+  resultCode: Integer;
+begin
+  statusText := WizardForm.StatusLabel.Caption;
+  WizardForm.StatusLabel.Caption := CustomMessage('InstallingDotNetFramework');
+  WizardForm.ProgressGauge.Style := npbstMarquee;
+  try
+    ExtractTemporaryFile('{#DotNetRuntimeExe}');
+    if not Exec(ExpandConstant('{tmp}\{#DotNetRuntimeExe}'), '/passive /norestart /showrmui /showfinalerror', '', SW_SHOW, ewWaitUntilTerminated, resultCode) then
+    begin
+      Result := FmtMessage(CustomMessage('DotNetFrameworkFailedToLaunch'), [SysErrorMessage(resultCode)]);
+    end
+    else
+    begin
+      // See https://msdn.microsoft.com/en-us/library/ee942965(v=vs.110).aspx#return_codes
+      case resultCode of
+        0: begin
+          // Successful
+        end;
+        1602 : begin
+          MsgBox(CustomMessage('DotNetFrameworkFailed1602'), mbInformation, MB_OK);
+        end;
+        1603: begin
+          Result := CustomMessage('DotNetFrameworkFailed1603');
+        end;
+        1641: begin
+          requiresRestart := True;
+        end;
+        3010: begin
+          requiresRestart := True;
+        end;
+        5100: begin
+          Result := CustomMessage('DotNetFrameworkFailed5100');
+        end;
+        else begin
+          MsgBox(FmtMessage(CustomMessage('DotNetFrameworkFailedOther'), [IntToStr(resultCode)]), mbError, MB_OK);
+        end;
+      end;
+    end;
+  finally
+    WizardForm.StatusLabel.Caption := statusText;
+    WizardForm.ProgressGauge.Style := npbstNormal;
+  end;
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  // 'NeedsRestart' only has an effect if we return a non-empty string, thus aborting the installation.
+  // If the installers indicate that they want a restart, this should be done at the end of installation.
+  // Therefore we set the global 'restartRequired' if a restart is needed, and return this from NeedRestart()
+  if DotNetIsMissing() then
+  begin
+    Result := InstallDotNet();
+  end;
+end;
+
+function NeedRestart(): Boolean;
+begin
+  Result := requiresRestart;
+end;
