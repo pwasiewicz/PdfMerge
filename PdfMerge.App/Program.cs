@@ -27,6 +27,9 @@ namespace PdfMerge.App
             }
 
             var outputFile = options.GetNormalizedOutput(workingDirectory);
+
+
+
             var merger = new PdfMerger(FileRooter.RootFilesIfNeeded(workingDirectory, DetermineFilesToMerge(options, workingDirectory)), outputFile);
             return !merger.Merge(new DatedWriter(Console.Out))
                 ? ProgramExitCodes.ErrorSavingFinalPdf

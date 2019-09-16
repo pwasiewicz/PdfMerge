@@ -1,9 +1,11 @@
 ﻿using PdfMerge.App.Writers;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
+using ShellProgressBar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace PdfMerge.App.Files
 {
@@ -23,15 +25,25 @@ namespace PdfMerge.App.Files
         public bool Merge(OutWriter statusWriter)
         {
             if (statusWriter == null) throw new ArgumentNullException(nameof(statusWriter));
-            statusWriter.WriteLine("Merging process started.");
-            using (var finalDocument = new PdfDocument())
+
+            var options = new ProgressBarOptions
             {
-                for (var inputIndex = 0; inputIndex < _inputs.Count; inputIndex++)
+                ProgressCharacter = '─',
+                ProgressBarOnBottom = true
+            };
+
+            using (var progressBar = new ProgressBar(_inputs.Count, "progress bar is on the bottom now", options))
+            {
+                using (var finalDocument = new PdfDocument())
                 {
-                    AdfPdfFromInput(statusWriter, inputIndex, finalDocument);
+                    for (var inputIndex = 0; inputIndex < _inputs.Count; inputIndex++)
+                    {
+                        AdfPdfFromInput(progressBar, statusWriter, inputIndex, finalDocument);
+                    }
+                    return SaveFinalPdfWithStatus(statusWriter, finalDocument);
                 }
-                return SaveFinalPdfWithStatus(statusWriter, finalDocument);
             }
+
         }
 
         private bool SaveFinalPdfWithStatus(OutWriter statusWriter, PdfDocument finalDocument)
@@ -61,13 +73,13 @@ namespace PdfMerge.App.Files
             }
         }
 
-        private void AdfPdfFromInput(OutWriter statusWriter, int inputIndex, PdfDocument finalDocument)
+        private void AdfPdfFromInput(ProgressBar progressBar, OutWriter statusWriter, int inputIndex, PdfDocument finalDocument)
         {
             var pdf = _inputs.ElementAt(inputIndex);
-            statusWriter.WriteLine($"{inputIndex + 1}/{_inputs.Count} Handling file {pdf}...");
+            progressBar.Tick($"Processing {inputIndex + 1}/{_inputs.Count}: {pdf}..");
             try
             {
-                AddPagesFromPdf(statusWriter, pdf, finalDocument);
+                AddPagesFromPdf(progressBar, statusWriter, pdf, finalDocument);
             }
             catch (Exception ex)
             {
@@ -76,15 +88,18 @@ namespace PdfMerge.App.Files
             }
         }
 
-        private static void AddPagesFromPdf(OutWriter statusWriter, string pdf, PdfDocument finalDocument)
+        private static void AddPagesFromPdf(ProgressBar progressBar, OutWriter statusWriter, string pdf, PdfDocument finalDocument)
         {
             using (var pdfDoc = PdfReader.Open(pdf, PdfDocumentOpenMode.Import))
+                using (var childProgressBar = progressBar.Spawn(pdfDoc.PageCount, "Processing pages"))
             {
                 for (var i = 0; i < pdfDoc.PageCount; i++)
                 {
+                    childProgressBar.Tick($"Processing page {i+1}/{pdfDoc.PageCount}");
                     AddPageFromPdf(statusWriter, finalDocument, pdfDoc, i);
+
+                    Thread.Sleep(50);
                 }
-                statusWriter.WriteLine($"Added {pdfDoc.PageCount} page(s) from {pdf}.");
             }
         }
 

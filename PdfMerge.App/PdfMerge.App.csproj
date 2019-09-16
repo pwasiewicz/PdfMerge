@@ -36,8 +36,8 @@
     <Reference Include="Figgle, Version=0.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Figgle.0.3.0\lib\net45\Figgle.dll</HintPath>
     </Reference>
-    <Reference Include="NCmdArgs, Version=1.0.4.5, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NCmdArgs.1.0.4.5\lib\net461\NCmdArgs.dll</HintPath>
+    <Reference Include="NCmdArgs, Version=1.0.4.6, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NCmdArgs.1.0.4.6\lib\net48\NCmdArgs.dll</HintPath>
     </Reference>
     <Reference Include="PdfSharp, Version=1.50.5147.0, Culture=neutral, PublicKeyToken=f94615aa0424f9eb, processorArchitecture=MSIL">
       <HintPath>..\packages\PDFsharp.1.50.5147\lib\net20\PdfSharp.dll</HintPath>
@@ -45,10 +45,16 @@
     <Reference Include="PdfSharp.Charting, Version=1.50.5147.0, Culture=neutral, PublicKeyToken=f94615aa0424f9eb, processorArchitecture=MSIL">
       <HintPath>..\packages\PDFsharp.1.50.5147\lib\net20\PdfSharp.Charting.dll</HintPath>
     </Reference>
+    <Reference Include="ShellProgressBar, Version=4.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ShellProgressBar.4.3.0\lib\netstandard2.0\ShellProgressBar.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Text.Encoding.CodePages, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encoding.CodePages.4.0.1\lib\net46\System.Text.Encoding.CodePages.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
