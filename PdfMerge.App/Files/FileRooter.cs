@@ -15,9 +15,14 @@ namespace PdfMerge.App.Files
             foreach (var file in files)
             {
                 if (file == null) yield break;
-                if (Path.IsPathRooted(file)) yield return file;
-
-                yield return Path.Combine(root, file);
+                if (Path.IsPathRooted(file))
+                {
+                    yield return file;
+                }
+                else
+                {
+                    yield return Path.Combine(root, file);
+                }
             }
         }
     }

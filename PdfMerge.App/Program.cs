@@ -11,6 +11,7 @@ namespace PdfMerge.App
     internal class Program
     {
         private static readonly TextWriter DefaultOut = Console.Out;
+        private static readonly TextReader DefaultIn = Console.In;
 
         private static int Main(string[] args)
         {
@@ -30,7 +31,19 @@ namespace PdfMerge.App
 
 
 
-            var merger = new PdfMerger(FileRooter.RootFilesIfNeeded(workingDirectory, DetermineFilesToMerge(options, workingDirectory)), outputFile);
+            var merger =
+                new PdfMerger(
+                    FileRooter.RootFilesIfNeeded(workingDirectory, DetermineFilesToMerge(options, workingDirectory)),
+                    outputFile)
+                {
+                    AskForOverride = path =>
+                    {
+                        DefaultOut.WriteLine($"File already '{path}' exists. Do you want to to override? [y]es or [n]o?");
+                        var result = Console.ReadKey();
+                        return result.KeyChar == 'y' || result.KeyChar == 'Y';
+                    }
+                };
+
             return !merger.Merge(new DatedWriter(Console.Out))
                 ? ProgramExitCodes.ErrorSavingFinalPdf
                 : ProgramExitCodes.Ok;

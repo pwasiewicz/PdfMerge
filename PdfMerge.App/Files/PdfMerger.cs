@@ -4,6 +4,7 @@ using PdfSharp.Pdf.IO;
 using ShellProgressBar;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 
@@ -22,6 +23,8 @@ namespace PdfMerge.App.Files
             _output = output ?? throw new ArgumentNullException(nameof(output));
         }
 
+        public Func<string,bool> AskForOverride { get; set; }
+
         public bool Merge(OutWriter statusWriter)
         {
             if (statusWriter == null) throw new ArgumentNullException(nameof(statusWriter));
@@ -32,18 +35,18 @@ namespace PdfMerge.App.Files
                 ProgressBarOnBottom = true
             };
 
-            using (var progressBar = new ProgressBar(_inputs.Count, "progress bar is on the bottom now", options))
+            using (var finalDocument = new PdfDocument())
             {
-                using (var finalDocument = new PdfDocument())
+                using (var progressBar = new ProgressBar(_inputs.Count, "progress bar is on the bottom now", options))
                 {
                     for (var inputIndex = 0; inputIndex < _inputs.Count; inputIndex++)
                     {
                         AdfPdfFromInput(progressBar, statusWriter, inputIndex, finalDocument);
                     }
-                    return SaveFinalPdfWithStatus(statusWriter, finalDocument);
                 }
-            }
 
+                return SaveFinalPdfWithStatus(statusWriter, finalDocument);
+            }
         }
 
         private bool SaveFinalPdfWithStatus(OutWriter statusWriter, PdfDocument finalDocument)
@@ -61,6 +64,14 @@ namespace PdfMerge.App.Files
 
         private bool SaveFinalPdf(OutWriter statusWriter, PdfDocument finalDocument)
         {
+            if (File.Exists(_output) && AskForOverride != null)
+            {
+                if (!AskForOverride(_output))
+                {
+                    return true;
+                }
+            }
+
             try
             {
                 finalDocument.Save(_output);
