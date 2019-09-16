@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "PdfMerge"
-#define MyAppVersion "1.0.0.0"
+#define MyAppVersion "1.0.0.1"
 #define MyAppPublisher "PeWuDev Patryk Wąsiewicz"
 #define MyAppURL "https://github.com/pwasiewicz/PdfMerge"
 #define MyAppExeName "PdfMerge.exe"
@@ -61,6 +61,8 @@ Source: "PdfMerge.App\bin\Release\PdfSharp.Charting.dll"; DestDir: "{app}"; Flag
 Source: "PdfMerge.App\bin\Release\PdfSharp.Charting.xml"; DestDir: "{app}"; Flags: ignoreversion
 Source: "PdfMerge.App\bin\Release\PdfSharp.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "PdfMerge.App\bin\Release\PdfSharp.xml"; DestDir: "{app}"; Flags: ignoreversion
+Source: "PdfMerge.App\bin\Release\ShellProgressBar.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "PdfMerge.App\bin\Release\System.Text.Encoding.CodePages.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "PdfMerge.App\bin\Release\de\PdfSharp.Charting.resources.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "PdfMerge.App\bin\Release\de\PdfSharp.resources.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DotNetRuntimeExe}"; DestDir: "{tmp}"; Flags: dontcopy nocompression noencryption
